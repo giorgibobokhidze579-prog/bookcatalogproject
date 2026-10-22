@@ -78,7 +78,7 @@ img {
 
 .header {
   width: 100%;
-  max-width: 1304px;
+  max-width: none;
   margin: 0 auto;
   padding: 24px 32px;
   display: flex;
@@ -130,7 +130,7 @@ img {
 
 .hero {
   width: calc(100% - 48px);
-  max-width: 1240px;
+  max-width: none;
   margin: 20px auto 0;
   padding: clamp(48px, 7vw, 88px) 24px;
   text-align: center;
@@ -311,7 +311,7 @@ img {
 }
 .books-section {
   width: 100%;
-  max-width: 1304px;
+  max-width: none;
   margin: 0 auto;
   padding: 68px 32px 88px;
 }
