@@ -8,7 +8,8 @@ const API_URL =
    1. კომპონენტების შექმნა
    ========================================= */
 
-function Header({ favoritesCount, showFavorites, onToggleView }) {
+// ახალი: theme და onToggleTheme
+function Header({ favoritesCount, showFavorites, onToggleView, theme, onToggleTheme }) {
   return (
     <header className="header">
       <a className="logo" href="/">
@@ -21,6 +22,14 @@ function Header({ favoritesCount, showFavorites, onToggleView }) {
         <button className="nav-favorites" onClick={onToggleView}>
           {showFavorites ? 'ყველა წიგნი' : `♥ რჩეულები (${favoritesCount})`}
         </button>
+        {/* ახალი: დღე / ღამე ღილაკი */}
+        <button
+          className="theme-toggle"
+          onClick={onToggleTheme}
+          aria-label={theme === 'dark' ? 'დღის რეჟიმი' : 'ღამის რეჟიმი'}
+        >
+          {theme === 'dark' ? '☀️' : '🌙'}
+        </button>
       </nav>
     </header>
   )
@@ -29,6 +38,14 @@ function Header({ favoritesCount, showFavorites, onToggleView }) {
 function Hero() {
   return (
     <section className="hero" id="home">
+      <div className="book-anim" aria-hidden="true">
+        <div className="book-page left"></div>
+        <div className="book-page right"></div>
+        <div className="book-flip f1"></div>
+        <div className="book-flip f2"></div>
+        <div className="book-flip f3"></div>
+      </div>
+
       <p className="eyebrow">შენი შემდეგი საყვარელი წიგნი აქ არის</p>
 
       <h1>
@@ -129,6 +146,25 @@ function App() {
   const [favorites, setFavorites] = useState([])
   const [showFavorites, setShowFavorites] = useState(false)
 
+  // ახალი: დღე / ღამე
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem('theme') ?? 'light'
+    } catch {
+      return 'light'
+    }
+  })
+
+  // ახალი: თემის გამოყენება და შენახვა
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    try {
+      localStorage.setItem('theme', theme)
+    } catch {
+      // storage unavailable
+    }
+  }, [theme])
+
   // წიგნების ჩატვირთვა გვერდის გახსნისას
   useEffect(() => {
     async function loadBooks() {
@@ -148,16 +184,21 @@ function App() {
 
   /* 3. ინტერაქტიულობა */
 
-  
+  // რჩეულებში დამატება / წაშლა
   function toggleFavorite(id) {
     setFavorites((prev) =>
       prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
     )
   }
 
-  
+  // ყველა წიგნი ↔ მხოლოდ რჩეულები
   function toggleView() {
     setShowFavorites(!showFavorites)
+  }
+
+  // ახალი: დღე ↔ ღამე
+  function toggleTheme() {
+    setTheme(theme === 'dark' ? 'light' : 'dark')
   }
 
   const visibleBooks = showFavorites
@@ -166,10 +207,13 @@ function App() {
 
   return (
     <div className="app">
+      {/* ახალი: theme და onToggleTheme */}
       <Header
         favoritesCount={favorites.length}
         showFavorites={showFavorites}
         onToggleView={toggleView}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       <main>
