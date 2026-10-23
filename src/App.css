@@ -814,3 +814,95 @@ img {
 [data-theme="dark"] .footer {
   background: #0b0c0a;
 }
+/* ===== ძიება და ბარათის ღილაკები ===== */
+.search-by {
+  flex-shrink: 0;
+  padding: 12px 10px;
+  border: none;
+  border-radius: 10px;
+  background: var(--green-light);
+  color: var(--green-dark);
+  font-size: 12px;
+  font-weight: 600;
+  outline: none;
+  cursor: pointer;
+}
+
+.cover {
+  position: relative;
+}
+
+.fav-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 92%);
+  color: var(--green);
+  font-size: 17px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.fav-btn:hover {
+  transform: scale(1.1);
+}
+
+.fav-btn.active {
+  background: var(--green);
+  border-color: var(--green);
+  color: #fff;
+}
+
+.details-btn {
+  margin: 0 0 12px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--green-dark);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.details-btn:hover {
+  background: var(--green-light);
+}
+
+.book-info .description {
+  font-size: 11px;
+}
+
+.book-info .year ~ .book-link {
+  margin-top: 0;
+}
+
+[data-theme="dark"] .fav-btn {
+  background: rgb(26 29 24 / 92%);
+}
+
+@media (max-width: 600px) {
+  .search-by {
+    padding: 10px 6px;
+    font-size: 11px;
+  }
+
+  .fav-btn {
+    top: 7px;
+    right: 7px;
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+  }
+
+  .details-btn {
+    padding: 5px 9px;
+    font-size: 10px;
+  }
+}

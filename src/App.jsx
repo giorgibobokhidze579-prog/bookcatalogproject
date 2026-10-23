@@ -1,15 +1,47 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 
-const API_URL =
-  'https://www.googleapis.com/books/v1/volumes?q=subject:fiction&maxResults=20'
+const API_URL = 'https://openlibrary.org'
+const POPULAR_URL = `${API_URL}/subjects/fiction.json?limit=20`
 
 /* =========================================
-   1. კომპონენტების შექმნა
+   API — მონაცემების ასინქრონული მიღება
    ========================================= */
 
-// ახალი: theme და onToggleTheme
-function Header({ favoritesCount, showFavorites, onToggleView, theme, onToggleTheme }) {
+// API-ს პასუხს ვაქცევთ ჩვენს ფორმატად
+function toBook(item) {
+  const coverId = item.cover_id ?? item.cover_i
+  return {
+    id: item.key,
+    title: item.title,
+    author:
+      item.authors?.map((a) => a.name).join(', ') ??
+      item.author_name?.join(', ') ??
+      'უცნობი ავტორი',
+    year: item.first_publish_year,
+    subjects: (item.subject ?? []).slice(0, 3).join(', '),
+    cover: coverId ? `https://covers.openlibrary.org/b/id/${coverId}-M.jpg` : null,
+    link: `https://openlibrary.org${item.key}`,
+  }
+}
+
+async function fetchBooks(url) {
+  const res = await fetch(url)
+  if (!res.ok) throw new Error(res.status)
+  const data = await res.json()
+  return (data.works ?? data.docs ?? []).map(toBook)
+}
+
+function searchUrl(searchBy, query) {
+  // searchBy: 'title' — სათაურით, 'author' — ავტორით
+  return `${API_URL}/search.json?${searchBy}=${encodeURIComponent(query)}&limit=20&fields=key,title,author_name,first_publish_year,cover_i,subject`
+}
+
+/* =========================================
+   კომპონენტები
+   ========================================= */
+
+function Header({ favoritesCount, showFavorites, onToggleView, theme, onToggleTheme, onShowBooks }) {
   return (
     <header className="header">
       <a className="logo" href="/">
@@ -17,12 +49,11 @@ function Header({ favoritesCount, showFavorites, onToggleView, theme, onToggleTh
       </a>
 
       <nav>
-        <a href="#home">მთავარი</a>
-        <a href="#books">წიგნები</a>
+        <a href="#home" onClick={onShowBooks}>მთავარი</a>
+        <a href="#books" onClick={onShowBooks}>წიგნები</a>
         <button className="nav-favorites" onClick={onToggleView}>
           {showFavorites ? 'ყველა წიგნი' : `♥ რჩეულები (${favoritesCount})`}
         </button>
-        {/* ახალი: დღე / ღამე ღილაკი */}
         <button
           className="theme-toggle"
           onClick={onToggleTheme}
@@ -35,7 +66,7 @@ function Header({ favoritesCount, showFavorites, onToggleView, theme, onToggleTh
   )
 }
 
-function Hero() {
+function Hero({ query, onQueryChange, searchBy, onSearchByChange, onSearch, loading }) {
   return (
     <section className="hero" id="home">
       <div className="book-anim" aria-hidden="true">
@@ -57,56 +88,82 @@ function Hero() {
         და იპოვე ახალი ისტორიები.
       </p>
 
-      <form className="search-form">
+      <form className="search-form" onSubmit={onSearch}>
+        <select
+          className="search-by"
+          value={searchBy}
+          onChange={(e) => onSearchByChange(e.target.value)}
+          aria-label="ძიების ტიპი"
+        >
+          <option value="title">სათაური</option>
+          <option value="author">ავტორი</option>
+        </select>
         <input
           type="search"
-          placeholder="შეიყვანე წიგნის ან ავტორის სახელი..."
+          placeholder={
+            searchBy === 'title'
+              ? 'შეიყვანე წიგნის სათაური...'
+              : 'შეიყვანე ავტორის სახელი...'
+          }
           aria-label="წიგნის ან ავტორის ძიება"
+          value={query}
+          onChange={(e) => onQueryChange(e.target.value)}
         />
-        <button type="button">ძიება</button>
+        <button type="submit" disabled={loading}>
+          {loading ? 'იძებნება...' : 'ძიება'}
+        </button>
       </form>
     </section>
   )
 }
 
 function BookCard({ book, isFavorite, onToggleFavorite }) {
-  // ბარათის საკუთარი მდგომარეობა — აღწერის გახსნა/დახურვა
+  // ბარათის საკუთარი მდგომარეობა — დამატებითი ინფორმაციის გახსნა/დახურვა
   const [showDetails, setShowDetails] = useState(false)
-
-  const info = book.volumeInfo
-  const cover = info.imageLinks?.thumbnail?.replace('http:', 'https:')
 
   return (
     <article className="book-card">
-      <div className="cover-wrap">
-        {cover ? (
-          <img src={cover} alt={info.title} />
+      <div className="cover">
+        {book.cover ? (
+          <img src={book.cover} alt={book.title} loading="lazy" />
         ) : (
-          <div className="no-cover">📖</div>
+          <div className="no-cover">
+            📖<span>ყდა არ არის</span>
+          </div>
         )}
-        <button className="fav-btn" onClick={onToggleFavorite}>
+        <button
+          className={isFavorite ? 'fav-btn active' : 'fav-btn'}
+          aria-label={isFavorite ? 'რჩეულებიდან წაშლა' : 'რჩეულებში დამატება'}
+          onClick={onToggleFavorite}
+        >
           {isFavorite ? '♥' : '♡'}
         </button>
       </div>
 
-      <h3>{info.title}</h3>
-      <p>{info.authors?.join(', ') ?? 'უცნობი ავტორი'}</p>
+      <div className="book-info">
+        <h3>{book.title}</h3>
+        <p>{book.author}</p>
 
-      <button className="details-btn" onClick={() => setShowDetails(!showDetails)}>
-        {showDetails ? 'დამალვა' : 'მეტის ნახვა'}
-      </button>
+        <button className="details-btn" onClick={() => setShowDetails(!showDetails)}>
+          {showDetails ? 'დამალვა' : 'მეტის ნახვა'}
+        </button>
 
-      {showDetails && (
-        <p className="description">
-          {info.description?.slice(0, 200) ?? 'აღწერა არ არის.'}
-          {info.description?.length > 200 && '...'}
-        </p>
-      )}
+        {showDetails && (
+          <p className="description">
+            {book.subjects ? `ჟანრი: ${book.subjects}` : 'დამატებითი ინფორმაცია არ არის.'}
+          </p>
+        )}
+
+        {book.year && <span className="year">{book.year}</span>}
+        <a className="book-link" href={book.link} target="_blank" rel="noreferrer">
+          დეტალურად →
+        </a>
+      </div>
     </article>
   )
 }
 
-function BookList({ books, favorites, onToggleFavorite, emptyText }) {
+function BookList({ books, isFavorite, onToggleFavorite, emptyText }) {
   if (books.length === 0) return <p className="status">{emptyText}</p>
 
   return (
@@ -115,8 +172,8 @@ function BookList({ books, favorites, onToggleFavorite, emptyText }) {
         <BookCard
           key={book.id}
           book={book}
-          isFavorite={favorites.includes(book.id)}
-          onToggleFavorite={() => onToggleFavorite(book.id)}
+          isFavorite={isFavorite(book.id)}
+          onToggleFavorite={() => onToggleFavorite(book)}
         />
       ))}
     </div>
@@ -139,14 +196,21 @@ function Footer() {
    ========================================= */
 
 function App() {
-  /* 2. მდგომარეობის მართვა (state) */
+  // წიგნები და ჩატვირთვა
   const [books, setBooks] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [heading, setHeading] = useState('პოპულარული წიგნები')
+
+  // ძიება
+  const [query, setQuery] = useState('')
+  const [searchBy, setSearchBy] = useState('title')
+
+  // რჩეულები
   const [favorites, setFavorites] = useState([])
   const [showFavorites, setShowFavorites] = useState(false)
 
-  // ახალი: დღე / ღამე
+  // დღე / ღამე
   const [theme, setTheme] = useState(() => {
     try {
       return localStorage.getItem('theme') ?? 'light'
@@ -155,7 +219,6 @@ function App() {
     }
   })
 
-  // ახალი: თემის გამოყენება და შენახვა
   useEffect(() => {
     document.documentElement.dataset.theme = theme
     try {
@@ -165,75 +228,102 @@ function App() {
     }
   }, [theme])
 
-  // წიგნების ჩატვირთვა გვერდის გახსნისას
-  useEffect(() => {
-    async function loadBooks() {
-      try {
-        const res = await fetch(API_URL)
-        if (!res.ok) throw new Error(res.status)
-        const data = await res.json()
-        setBooks(data.items ?? [])
-      } catch {
-        setError('წიგნების ჩატვირთვა ვერ მოხერხდა')
-      } finally {
-        setLoading(false)
-      }
+  // წიგნების ჩატვირთვა API-დან (ასინქრონულად)
+  async function loadBooks(url, newHeading) {
+    setLoading(true)
+    setError(null)
+    setShowFavorites(false)
+    try {
+      const result = await fetchBooks(url)
+      setBooks(result)
+      setHeading(newHeading)
+    } catch {
+      setError('წიგნების ჩატვირთვა ვერ მოხერხდა')
+    } finally {
+      setLoading(false)
     }
-    loadBooks()
+  }
+
+  // გვერდის გახსნისას — პოპულარული წიგნები
+  useEffect(() => {
+    loadBooks(POPULAR_URL, 'პოპულარული წიგნები')
   }, [])
 
-  /* 3. ინტერაქტიულობა */
+  // ძიება სათაურით ან ავტორით
+  function handleSearch(e) {
+    e.preventDefault()
+    const text = query.trim()
+    if (!text) return
+    loadBooks(searchUrl(searchBy, text), `ძიების შედეგები: "${text}"`)
+    document.getElementById('books')?.scrollIntoView({ behavior: 'smooth' })
+  }
 
   // რჩეულებში დამატება / წაშლა
-  function toggleFavorite(id) {
+  function toggleFavorite(book) {
     setFavorites((prev) =>
-      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+      prev.some((f) => f.id === book.id)
+        ? prev.filter((f) => f.id !== book.id)
+        : [...prev, book]
     )
   }
 
-  // ყველა წიგნი ↔ მხოლოდ რჩეულები
+  const isFavorite = (id) => favorites.some((f) => f.id === id)
+
   function toggleView() {
     setShowFavorites(!showFavorites)
   }
 
-  // ახალი: დღე ↔ ღამე
+  // "მთავარი" / "წიგნები" — ძიების გასუფთავება და პოპულარული წიგნების ჩვენება
+  function showBooks() {
+    setShowFavorites(false)
+    setQuery('')
+    if (heading !== 'პოპულარული წიგნები') {
+      loadBooks(POPULAR_URL, 'პოპულარული წიგნები')
+    }
+  }
+
   function toggleTheme() {
     setTheme(theme === 'dark' ? 'light' : 'dark')
   }
 
-  const visibleBooks = showFavorites
-    ? books.filter((book) => favorites.includes(book.id))
-    : books
+  const visibleBooks = showFavorites ? favorites : books
 
   return (
     <div className="app">
-      {/* ახალი: theme და onToggleTheme */}
       <Header
         favoritesCount={favorites.length}
         showFavorites={showFavorites}
         onToggleView={toggleView}
         theme={theme}
         onToggleTheme={toggleTheme}
+        onShowBooks={showBooks}
       />
 
       <main>
-        <Hero />
+        <Hero
+          query={query}
+          onQueryChange={setQuery}
+          searchBy={searchBy}
+          onSearchByChange={setSearchBy}
+          onSearch={handleSearch}
+          loading={loading}
+        />
 
         <section className="books-section" id="books">
           <div className="section-heading">
             <div>
               <p className="eyebrow">წიგნების კოლექცია</p>
-              <h2>{showFavorites ? 'რჩეული წიგნები' : 'პოპულარული წიგნები'}</h2>
+              <h2>{showFavorites ? 'რჩეული წიგნები' : heading}</h2>
             </div>
           </div>
 
-          {loading && <p className="status">იტვირთება...</p>}
-          {error && <p className="status error">{error}</p>}
+          {!showFavorites && loading && <p className="status">იტვირთება...</p>}
+          {!showFavorites && error && <p className="status error">{error}</p>}
 
-          {!loading && !error && (
+          {(showFavorites || (!loading && !error)) && (
             <BookList
               books={visibleBooks}
-              favorites={favorites}
+              isFavorite={isFavorite}
               onToggleFavorite={toggleFavorite}
               emptyText={
                 showFavorites ? 'რჩეულებში ჯერ არაფერია.' : 'წიგნები ვერ მოიძებნა.'
