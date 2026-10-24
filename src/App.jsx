@@ -6,7 +6,7 @@ const POPULAR_URL = `${API_URL}/subjects/fiction.json?limit=20`
 const POPULAR_HEADING = 'პოპულარული წიგნები'
 const TIMEOUT_MS = 15000
 
-const hasGeorgian = (text) => /[\u10A0-\u10FF]/.test(text)
+const hasGeorgian = (text) => /[Ⴀ-ჿ]/.test(text)
 
 function toBook(item) {
   const coverId = item.cover_id ?? item.cover_i
@@ -40,6 +40,19 @@ async function toEnglish(text) {
   return data[0].map((part) => part[0]).join('').trim()
 }
 
+async function fetchSuggestions(searchBy, text, signal) {
+  const res = await fetch(
+    `${API_URL}/search.json?${searchBy}=${encodeURIComponent(text)}&limit=10&fields=title,author_name`,
+    { signal }
+  )
+  if (!res.ok) throw new Error(res.status)
+  const data = await res.json()
+  const values = (data.docs ?? [])
+    .map((doc) => (searchBy === 'title' ? doc.title : doc.author_name?.[0]))
+    .filter(Boolean)
+  return [...new Set(values)].slice(0, 6)
+}
+
 function searchUrl(searchBy, query) {
   return `${API_URL}/search.json?${searchBy}=${encodeURIComponent(query)}&limit=20&fields=key,title,author_name,first_publish_year,cover_i,subject`
 }
@@ -69,7 +82,54 @@ function Header({ favoritesCount, showFavorites, onToggleView, theme, onToggleTh
   )
 }
 
-function Hero({ query, onQueryChange, searchBy, onSearchByChange, onSearch, loading }) {
+function Highlight({ text, part }) {
+  const index = part ? text.toLowerCase().indexOf(part.toLowerCase()) : -1
+  if (index < 0) return text
+  return (
+    <>
+      {text.slice(0, index)}
+      <mark>{text.slice(index, index + part.length)}</mark>
+      {text.slice(index + part.length)}
+    </>
+  )
+}
+
+function Hero({
+  query,
+  onQueryChange,
+  searchBy,
+  onSearchByChange,
+  onSearch,
+  loading,
+  suggestions,
+  onPickSuggestion,
+}) {
+  const [open, setOpen] = useState(false)
+  const [active, setActive] = useState(-1)
+  const showList = open && query.trim() !== '' && suggestions.length > 0
+
+  function pick(value) {
+    setOpen(false)
+    setActive(-1)
+    onPickSuggestion(value)
+  }
+
+  function handleKeyDown(e) {
+    if (!showList) return
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActive((i) => (i + 1) % suggestions.length)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActive((i) => (i <= 0 ? suggestions.length - 1 : i - 1))
+    } else if (e.key === 'Enter' && active >= 0) {
+      e.preventDefault()
+      pick(suggestions[active])
+    } else if (e.key === 'Escape') {
+      setOpen(false)
+    }
+  }
+
   return (
     <section className="hero" id="home">
       <div className="book-anim" aria-hidden="true">
@@ -91,7 +151,13 @@ function Hero({ query, onQueryChange, searchBy, onSearchByChange, onSearch, load
         და იპოვე ახალი ისტორიები.
       </p>
 
-      <form className="search-form" onSubmit={onSearch}>
+      <form
+        className="search-form"
+        onSubmit={(e) => {
+          setOpen(false)
+          onSearch(e)
+        }}
+      >
         <select
           className="search-by"
           value={searchBy}
@@ -109,12 +175,46 @@ function Hero({ query, onQueryChange, searchBy, onSearchByChange, onSearch, load
               : 'შეიყვანე ავტორის სახელი...'
           }
           aria-label="წიგნის ან ავტორის ძიება"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded={showList}
+          aria-controls="book-suggestions"
+          autoComplete="off"
           value={query}
-          onChange={(e) => onQueryChange(e.target.value)}
+          onChange={(e) => {
+            onQueryChange(e.target.value)
+            setOpen(true)
+            setActive(-1)
+          }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setOpen(false)}
+          onKeyDown={handleKeyDown}
         />
         <button type="submit" disabled={loading}>
           {loading ? 'იძებნება...' : 'ძიება'}
         </button>
+
+        {showList && (
+          <ul className="suggestions" id="book-suggestions" role="listbox">
+            {suggestions.map((item, i) => (
+              <li
+                key={item}
+                role="option"
+                aria-selected={i === active}
+                className={i === active ? 'active' : ''}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => pick(item)}
+              >
+                <span className="suggestion-icon" aria-hidden="true">
+                  {searchBy === 'title' ? '📖' : '✍️'}
+                </span>
+                <span className="suggestion-text">
+                  <Highlight text={item} part={query.trim()} />
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </form>
     </section>
   )
@@ -212,6 +312,7 @@ function App() {
 
   const [query, setQuery] = useState('')
   const [searchBy, setSearchBy] = useState('title')
+  const [suggestions, setSuggestions] = useState([])
 
   const [favorites, setFavorites] = useState(() => {
     try {
@@ -280,9 +381,38 @@ function App() {
     loadBooks(POPULAR_URL, POPULAR_HEADING)
   }, [])
 
-  async function handleSearch(e) {
-    e.preventDefault()
+  useEffect(() => {
     const text = query.trim()
+    if (!text) return
+
+    const controller = new AbortController()
+    const timer = setTimeout(async () => {
+      try {
+        const english = hasGeorgian(text) ? await toEnglish(text) : text
+        const list = await fetchSuggestions(searchBy, english, controller.signal)
+        setSuggestions(list)
+      } catch {
+        return
+      }
+    }, 300)
+
+    return () => {
+      clearTimeout(timer)
+      controller.abort()
+    }
+  }, [query, searchBy])
+
+  function pickSuggestion(value) {
+    setQuery(value)
+    runSearch(value)
+  }
+
+  function handleSearch(e) {
+    e.preventDefault()
+    runSearch(query.trim())
+  }
+
+  async function runSearch(text) {
     if (!text) return
     document.getElementById('books')?.scrollIntoView({ behavior: 'smooth' })
 
@@ -349,6 +479,8 @@ function App() {
           onSearchByChange={setSearchBy}
           onSearch={handleSearch}
           loading={loading}
+          suggestions={suggestions}
+          onPickSuggestion={pickSuggestion}
         />
 
         <section className="books-section" id="books">

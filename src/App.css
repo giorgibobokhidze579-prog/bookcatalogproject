@@ -921,3 +921,66 @@ img {
 .retry-btn:hover {
   background: var(--green-dark);
 }
+.search-form {
+  position: relative;
+}
+
+.suggestions {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--white);
+  box-shadow: 0 16px 40px rgb(0 0 0 / 12%);
+  text-align: left;
+}
+
+.suggestions li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.suggestions li:hover,
+.suggestions li.active {
+  background: var(--green-light);
+}
+
+.suggestion-icon {
+  flex-shrink: 0;
+  font-size: 15px;
+}
+
+.suggestion-text {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.suggestions mark {
+  background: none;
+  color: var(--green);
+  font-weight: 700;
+}
+
+[data-theme="dark"] .suggestions {
+  box-shadow: 0 16px 40px rgb(0 0 0 / 45%);
+}
+
+@media (max-width: 600px) {
+  .suggestions li {
+    padding: 9px 10px;
+    font-size: 13px;
+  }
+}
