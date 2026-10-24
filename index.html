@@ -11,9 +11,17 @@
     <link rel="preconnect" href="https://openlibrary.org" crossorigin />
     <link rel="preconnect" href="https://covers.openlibrary.org" />
     <link
-      rel="stylesheet"
+      rel="preload"
+      as="style"
       href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&display=swap"
+      />
+    </noscript>
     <title>BookFinder — წიგნების საძიებო საიტი</title>
   </head>
   <body>
