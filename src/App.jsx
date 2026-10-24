@@ -402,6 +402,13 @@ function App() {
     }
   }, [query, searchBy])
 
+  function handleQueryChange(value) {
+    setQuery(value)
+    if (!value.trim() && heading !== POPULAR_HEADING) {
+      loadBooks(POPULAR_URL, POPULAR_HEADING)
+    }
+  }
+
   function pickSuggestion(value) {
     setQuery(value)
     runSearch(value)
@@ -474,7 +481,7 @@ function App() {
       <main>
         <Hero
           query={query}
-          onQueryChange={setQuery}
+          onQueryChange={handleQueryChange}
           searchBy={searchBy}
           onSearchByChange={setSearchBy}
           onSearch={handleSearch}
