@@ -12,10 +12,30 @@
     <link rel="preconnect" href="https://covers.openlibrary.org" />
     <link
       rel="preload"
-      href="https://openlibrary.org/subjects/fiction.json?limit=20"
-      as="fetch"
-      crossorigin
+      as="image"
+      href="https://covers.openlibrary.org/b/id/10527843-M.jpg"
+      fetchpriority="high"
     />
+    <script>
+      // API-ს ვითხოვთ React-ის ჩატვირთვამდე და პირველ ყდას მაშინვე ვატვირთინებთ
+      window.__fictionPromise = fetch('https://openlibrary.org/subjects/fiction.json?limit=20')
+        .then(function (r) {
+          if (!r.ok) throw new Error(r.status);
+          return r.json();
+        })
+        .then(function (data) {
+          var first = data.works && data.works[0];
+          if (first && first.cover_id) {
+            var link = document.createElement('link');
+            link.rel = 'preload';
+            link.as = 'image';
+            link.fetchPriority = 'high';
+            link.href = 'https://covers.openlibrary.org/b/id/' + first.cover_id + '-M.jpg';
+            document.head.appendChild(link);
+          }
+          return data;
+        });
+    </script>
     <link
       rel="preload"
       as="style"

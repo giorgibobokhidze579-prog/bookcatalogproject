@@ -25,6 +25,17 @@ function toBook(item) {
 }
 
 async function fetchBooks(url, signal) {
+  const preloaded = url === POPULAR_URL ? window.__fictionPromise : null
+  window.__fictionPromise = null
+  if (preloaded) {
+    try {
+      const data = await preloaded
+      return (data.works ?? []).map(toBook)
+    } catch {
+      // წინასწარი მოთხოვნა ჩავარდა, ქვემოთ ჩვეულებრივად ვითხოვთ
+    }
+  }
+
   const res = await fetch(url, { signal })
   if (!res.ok) throw new Error(res.status)
   const data = await res.json()
