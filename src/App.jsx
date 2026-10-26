@@ -220,7 +220,7 @@ function Hero({
   )
 }
 
-function BookCard({ book, isFavorite, onToggleFavorite }) {
+function BookCard({ book, isFavorite, onToggleFavorite, priority }) {
   const [showDetails, setShowDetails] = useState(false)
 
   return (
@@ -232,7 +232,8 @@ function BookCard({ book, isFavorite, onToggleFavorite }) {
             alt={book.title}
             width="180"
             height="270"
-            loading="lazy"
+            loading={priority ? 'eager' : 'lazy'}
+            fetchPriority={priority ? 'high' : 'auto'}
             decoding="async"
           />
         ) : (
@@ -277,9 +278,10 @@ function BookList({ books, isFavorite, onToggleFavorite, emptyText }) {
 
   return (
     <div className="books-grid">
-      {books.map((book) => (
+      {books.map((book, index) => (
         <BookCard
           key={book.id}
+          priority={index < 5}
           book={book}
           isFavorite={isFavorite(book.id)}
           onToggleFavorite={() => onToggleFavorite(book)}

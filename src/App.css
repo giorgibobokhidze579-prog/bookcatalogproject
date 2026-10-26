@@ -983,3 +983,23 @@ img {
     font-size: 13px;
   }
 }
+/* ===== ფერების კონტრასტი (Accessibility) ===== */
+:root:not([data-theme="dark"]) .search-form button,
+:root:not([data-theme="dark"]) .retry-btn {
+  background: var(--green-dark);
+}
+
+:root:not([data-theme="dark"]) .search-form button:hover:not(:disabled),
+:root:not([data-theme="dark"]) .retry-btn:hover {
+  background: #3f5730;
+}
+
+:root:not([data-theme="dark"]) .eyebrow,
+:root:not([data-theme="dark"]) .book-info .year {
+  color: var(--green-dark);
+}
+
+:root:not([data-theme="dark"]) .book-info p,
+:root:not([data-theme="dark"]) .footer p {
+  color: #62665e;
+}
