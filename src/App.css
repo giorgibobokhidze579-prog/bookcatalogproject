@@ -751,15 +751,7 @@ img {
   background: #0b0c0a;
 }
 
-/* ===== Desktop: hero ავსებს პირველ ეკრანს ===== */
-@media (min-width: 851px) {
-  .hero {
-    min-height: calc(100vh - 110px);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-}
+
 
 /* ===== ეკრანის ზომები ===== */
 @media (max-width: 1100px) {
@@ -1018,4 +1010,7 @@ img {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+.books-section {
+  min-height: 100vh;
 }
