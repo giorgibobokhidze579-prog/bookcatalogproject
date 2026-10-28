@@ -1,16 +1,41 @@
-# React + Vite
+# 📚 BookFinder — წიგნების კატალოგის საძიებო ვებგვერდი
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**ცოცხალი ვერსია:** https://bookcatalogproject.vercel.app
 
-Currently, two official plugins are available:
+BookFinder არის React-ზე აგებული წიგნების საძიებო კატალოგი. მონაცემებს იღებს Open Library API-დან.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## გვერდები
+- **მთავარი** — პოპულარული წიგნები და ძიება
+- **წიგნები** — შემთხვევითი წიგნები სხვადასხვა ჟანრიდან („სხვა წიგნები“ ღილაკით)
+- **რჩეულები** — შენ მიერ არჩეული წიგნები (თავიდან ცარიელია)
 
-## React Compiler
+## ფუნქციები
+- ძიება სათაურით ან ავტორით, ქართულადაც (ავტომატური თარგმანი)
+- ძიების მინიშნებები აკრეფისას (კლავიატურით მართვა ↑ ↓ Enter Esc)
+- რჩეული წიგნები ინახება ბრაუზერში
+- დღის / ღამის რეჟიმი
+- რესპონსიული დიზაინი ყველა ზომის ეკრანისთვის
+- შეცდომების დამუშავება: 15 წამის ლიმიტი და „თავიდან ცდა“ ღილაკი
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## ტექნოლოგიები
+React · Vite · JavaScript (fetch, async/await) · CSS (Grid, Flexbox, Media Queries) · Open Library API · Git / GitHub · Vercel
 
-## Expanding the ESLint configuration
+## სტრუქტურა
+```
+src/
+├── services/bookService.js   — API-დან მონაცემების წამოღება
+├── hooks/                    — useBooks, useFavorites, useTheme, usePage
+├── components/               — Header, Footer, SearchBar, BookSection, BookCard (თითოეული თავისი CSS-ით)
+├── pages/                    — HomePage, BooksPage, FavoritesPage (თითოეული თავისი CSS-ით)
+├── App.jsx                   — გვერდების გადართვა
+├── index.css                 — საერთო სტილები და ფერები
+└── main.jsx
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## გაშვება
+```bash
+npm install
+npm run dev
+```
+
+**ავტორი:** გიორგი ბობოხიძე

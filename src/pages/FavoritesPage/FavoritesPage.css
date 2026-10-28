@@ -1,0 +1,14 @@
+.favorites-empty {
+  padding: 24px 0;
+}
+
+.favorites-empty span {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 40px;
+  line-height: 1;
+}
+
+.favorites-empty p {
+  margin: 0;
+}

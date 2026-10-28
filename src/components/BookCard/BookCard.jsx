@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import './BookCard.css'
 
 function BookCard({ book, isFavorite, onToggleFavorite, priority }) {
   const [showDetails, setShowDetails] = useState(false)
